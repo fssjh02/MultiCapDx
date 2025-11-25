@@ -104,7 +104,8 @@ To enable Firebase (optional):
 ```
 export FIREBASE_KEY=/path/to/your/firebase_key.json
 ```
-3. How to Run (From a Clean Machine)
+## 3. How to Run (From a Clean Machine)
+
 3.1 Install Python dependencies
 ```
 cd backend
@@ -146,7 +147,7 @@ Extract & Analyze — calculates viral scores
 
 Download CSV — saves normalized ROI data
 
-4. Reproducibility Notes
+## 4. Reproducibility Notes
 
 ROI normalization and scoring follow the exact method used in the primary experiments
 
@@ -156,7 +157,7 @@ CSV files contain the exact normalized ROI values used in scoring
 
 Example CSV files (positive/negative) are included in sample_data/
 
-5. Citation
+## 5. Citation
 
 If this code is used in a scientific publication, please cite:
 
