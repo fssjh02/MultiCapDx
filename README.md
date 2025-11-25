@@ -41,109 +41,121 @@ MulticapDx/
 
 ---
 
-## 2. Components and Roles (Beginner-Friendly)
+2. Components and Roles (Beginner-Friendly)
+2.1 MCU + Sensor Board
 
-### 2.1 MCU + Sensor Board
-- Reads capacitance-based bubble height signals from the Multicap Dx sensor  
-- Streams a **160×160 grayscale frame (0–255)** via USB serial  
-- Functions like a low-resolution “camera” for bubble profiles  
-- The example firmware (`mcufirmware/multicapdx_sensor.ino`) demonstrates how to respond to a `99\n` command by outputting 25,600 comma-separated pixel values  
+Reads capacitance-based bubble height signals from the Multicap Dx sensor
 
----
+Streams a 160×160 grayscale frame (0–255) via USB serial
 
-### 2.2 Python/Flask Backend (`backend/server.py`)
-The backend provides the full analysis workflow:
+Functions like a low-resolution “camera” for bubble profiles
 
-1. Sends `99\n` to the MCU to trigger frame acquisition  
-2. Receives a 160×160 frame from the MCU  
-3. Converts the frame into a PNG image for the browser  
-4. Applies four ROIs (Internal, HIV, HBV, HCV)  
-5. Performs per-frame **min–max normalization** inside ROIs  
-6. Computes viral scores (sum of normalized values)  
-7. Determines **Positive/Negative** for each target  
-8. Saves normalized ROI data as a CSV file  
-9. Exposes REST endpoints:
+The example firmware (mcufirmware/multicapdx_sensor.ino) demonstrates how to respond to a 99\n command by outputting 25,600 comma-separated pixel values
 
-| Endpoint            | Function |
-|--------------------|----------|
-| `POST /api/capture` | Acquire and return a new frame |
-| `POST /api/extract` | Perform ROI extraction + scoring |
-| `GET /download/...` | Download CSV output |
+2.2 Python/Flask Backend (backend/server.py)
 
----
+The backend provides the full analysis pipeline:
 
-### 2.3 Web UI (HTML/CSS/JS)
-The browser UI (index.html + style.css + app.js):
+Sends 99\n to the MCU to trigger frame acquisition
 
-- Displays the sensor image with color-coded ROI boxes  
-- Allows pixel-level adjustment of each ROI  
-- Provides **RUN** and **Extract & Analyze** buttons  
-- Shows Internal control status and viral Positive/Negative calls  
-- Provides **Download CSV** for normalized ROI values  
+Receives a 160×160 frame from the MCU
 
-Runs entirely in the browser—no installation needed.
+Converts the frame into a PNG image for display
 
----
+Applies four ROIs (Internal, HIV, HBV, HCV)
 
-### 2.4 Firebase (Optional)
-Some deployments use Firebase Firestore to sync results across devices.  
-Firebase is **not required** for reproducing the analysis pipeline.  
-Service account keys are intentionally **not included** in this repository.
+Performs per-frame min–max normalization inside ROIs
+
+Computes viral scores (sum of normalized values)
+
+Generates Positive/Negative decisions
+
+Saves normalized ROI values into a CSV file
+
+Exposes REST endpoints:
+
+Endpoint	Function
+POST /api/capture	Acquire and return a new frame
+POST /api/extract	Perform ROI extraction and scoring
+GET /download/...	Download normalized ROI CSV
+2.3 Web UI (HTML/CSS/JS)
+
+The browser interface (index.html + style.css + app.js):
+
+Displays the sensor frame with color-coded ROI boxes
+
+Allows pixel-level adjustment of each ROI
+
+Provides RUN and Extract & Analyze buttons
+
+Shows Internal control status and viral Positive/Negative calls
+
+Lets the user download normalized ROI data as a CSV
+
+Runs entirely in the browser—no installation required.
+
+2.4 Firebase (Optional)
+
+Some deployments connect to Firebase Firestore for remote result monitoring.
+Firebase is not required for reproducing the analysis pipeline.
+Service account keys are intentionally not included for security.
 
 To enable Firebase (optional):
 
+export FIREBASE_KEY=/path/to/your/firebase_key.json
 
----
-
-## 3. How to Run (From a Clean Machine)
-
-### 3.1 Install Python dependencies
-```bash
+3. How to Run (From a Clean Machine)
+3.1 Install Python dependencies
 cd backend
 pip install -r requirements.txt
 
 3.2 Connect the MCU
 
-Upload the example firmware or your own 160×160 pixel streaming firmware
+Upload the example firmware or your own firmware that outputs a 160×160 frame
 
-Update PORT_NAME inside server.py if needed (e.g., "COM7" or "/dev/ttyACM0")
+Edit PORT_NAME in server.py to match your system
+
+Windows example: "COM7"
+
+Linux/Mac example: "/dev/ttyACM0"
 
 3.3 Run the Flask backend
 python server.py
+
+
+Expected output:
 
 Running on http://127.0.0.1:5050
 
 3.4 Open the Web UI
 
-Open a browser and navigate to:
+Open any browser (Chrome/Edge):
 
 ➡ http://127.0.0.1:5050
 
 Then:
 
-RUN — captures a new frame
+RUN — captures a frame
 
-Adjust ROIs if needed
+Adjust ROIs if necessary
 
-Extract & Analyze — performs scoring
+Extract & Analyze — calculates viral scores
 
-Download the CSV for record-keeping or offline analysis
+Download CSV — saves normalized ROI data
 
 4. Reproducibility Notes
 
-The scoring method (ROI min–max normalization + sum of normalized pixels) is identical to the analysis used in the main experiments.
+ROI normalization and scoring follow the exact method used in the primary experiments
 
-No filtering or temporal smoothing is applied at this layer.
+No filtering or temporal smoothing is applied
 
-CSV outputs contain the exact normalized ROI values used for viral score computation.
+CSV files contain the exact normalized ROI values used in scoring
 
-Example positive/negative CSV files are included under sample_data/.
+Example CSV files (positive/negative) are included in sample_data/
 
 5. Citation
 
 If this code is used in a scientific publication, please cite:
 
 Multicap Dx Web UI & Backend
-Source code available at: https://github.com/USERNAME/MulticapDx
-
-(Replace USERNAME with your GitHub account.)
+Source code available at: https://github.com/fssjh02/MultiCapDx
