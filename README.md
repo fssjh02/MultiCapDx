@@ -100,13 +100,15 @@ Firebase is not required for reproducing the analysis pipeline.
 Service account keys are intentionally not included for security.
 
 To enable Firebase (optional):
-
+```
 export FIREBASE_KEY=/path/to/your/firebase_key.json
-
+```
 3. How to Run (From a Clean Machine)
 3.1 Install Python dependencies
+```
 cd backend
 pip install -r requirements.txt
+```
 
 3.2 Connect the MCU
 
@@ -119,13 +121,14 @@ Windows example: "COM7"
 Linux/Mac example: "/dev/ttyACM0"
 
 3.3 Run the Flask backend
+```
 python server.py
-
+```
 
 Expected output:
-
+```
 Running on http://127.0.0.1:5050
-
+```
 3.4 Open the Web UI
 
 Open any browser (Chrome/Edge):
