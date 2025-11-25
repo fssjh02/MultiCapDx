@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Multicap Dx | Shafiee Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <img src="{{ url_for('static', filename='lab_logo.png') }}" alt="Shafiee Lab Logo">
+  <div class="topbar-text">
+    <div class="lab">Shafiee Lab</div>
+    <div class="inst">Brigham and Women's Hospital | Harvard Medical School</div>
+    <div class="proj">Multicap Dx — Bubble-Induced 3D Capacitance Profiling for Quantitative Multi-Viral Antigen Detection</div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <!-- Controls card -->
+    <div class="card card-controls">
+      <div class="header">Controls</div>
+      <div class="body">
+        <div class="controls">
+          <button id="btnRun" class="btn run">RUN</button>
+        </div>
+        <div class="hint">
+          After dispensing the sample into all chambers, press the RUN button to capture a frame from the sensor.
+        </div>
+      </div>
+    </div>
+
+    <!-- Image & ROI card -->
+    <div class="card card-image">
+      <div class="header">
+        <div>Image & ROI</div>
+        <div><button id="btnResetROI" class="btn reset">Reset ROI</button></div>
+      </div>
+      <div class="body">
+        <div class="image-layout">
+          <div class="imgwrap" id="imgwrap">
+            <div id="placeholder" class="placeholder">
+              No image captured yet
+            </div>
+            <img id="img" alt="frame" class="frame-image" />
+            <svg id="overlay"></svg>
+          </div>
+
+          <div class="roi-panel">
+            <div class="roi-title">ROIs (center coordinates)</div>
+            <div class="roi-grid" id="roiGrid"></div>
+            <div class="legend">Use arrows to move the ROI center by 1 pixel.</div>
+          </div>
+        </div>
+
+        <div class="extract-row">
+          <button id="btnExtract" class="btn extract">Extract & Analyze</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results card -->
+    <div class="card card-results">
+      <div class="header">Results</div>
+      <div class="body">
+        <div id="downloadArea" class="download"></div>
+        <div id="results" class="results">
+          <div class="result-row">No analysis yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>© 2025 Shafiee Lab, Brigham and Women's Hospital, Harvard Medical School</div>
+    <div>Developed under the supervision of Dr. Hadi Shafiee (hshafiee@bwh.harvard.edu)</div>
+    <div>For Research and Clinical Evaluation Purposes Only | Multicap Dx Web Interface</div>
+  </div>
+</div>
+
+<!-- Flask → JS로 ROI 기본값 전달 -->
+<script>
+  window.DEFAULT_ROIS = {{ default_rois | tojson }};
+</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
+
