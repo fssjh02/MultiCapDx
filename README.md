@@ -38,8 +38,9 @@ MulticapDx/
 │
 └── README.md
 
-
 ---
+'''
+***
 
 2. Components and Roles (Beginner-Friendly)
 2.1 MCU + Sensor Board
