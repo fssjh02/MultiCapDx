@@ -95,7 +95,7 @@ The browser interface (index.html + style.css + app.js):
 
 - Runs entirely in the browser—no installation required.
 
-2.4 Firebase (Optional)
+### 2.4 Firebase (Optional)
 
 Some deployments connect to Firebase Firestore for remote result monitoring.
 Firebase is not required for reproducing the analysis pipeline.
@@ -132,7 +132,7 @@ Expected output:
 ```
 Running on http://127.0.0.1:5050
 ```
-3.4 Open the Web UI
+### 3.4 Open the Web UI
 
 Open any browser (Chrome/Edge):
 
