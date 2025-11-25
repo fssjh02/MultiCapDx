@@ -42,43 +42,44 @@ MulticapDx/
 
 ## 2. Components and Roles (Beginner-Friendly)
 
-# 2.1 MCU + Sensor Board
+### 2.1 MCU + Sensor Board
 
-Reads capacitance-based bubble height signals from the Multicap Dx sensor
+- Reads capacitance-based bubble height signals from the Multicap Dx sensor
 
-Streams a 160×160 grayscale frame (0–255) via USB serial
+- Streams a 160×160 grayscale frame (0–255) via USB serial
 
-Functions like a low-resolution “camera” for bubble profiles
+- Functions like a low-resolution “camera” for bubble profiles
 
-The example firmware (mcufirmware/multicapdx_sensor.ino) demonstrates how to respond to a 99\n command by outputting 25,600 comma-separated pixel values
+- The example firmware (mcufirmware/multicapdx_sensor.ino) demonstrates how to respond to a 99\n command by outputting 25,600 comma-separated pixel values
 
-2.2 Python/Flask Backend (backend/server.py)
+### 2.2 Python/Flask Backend (backend/server.py)
 
 The backend provides the full analysis pipeline:
 
-Sends 99\n to the MCU to trigger frame acquisition
+- Sends 99\n to the MCU to trigger frame acquisition
 
-Receives a 160×160 frame from the MCU
+- Receives a 160×160 frame from the MCU
 
-Converts the frame into a PNG image for display
+- Converts the frame into a PNG image for display
 
-Applies four ROIs (Internal, HIV, HBV, HCV)
+- Applies four ROIs (Internal, HIV, HBV, HCV)
 
-Performs per-frame min–max normalization inside ROIs
+- Performs per-frame min–max normalization inside ROIs
 
-Computes viral scores (sum of normalized values)
+- Computes viral scores (sum of normalized values)
 
-Generates Positive/Negative decisions
+- Generates Positive/Negative decisions
 
-Saves normalized ROI values into a CSV file
+- Saves normalized ROI values into a CSV file
 
-Exposes REST endpoints:
+- Exposes REST endpoints:
 
 Endpoint	Function
 POST /api/capture	Acquire and return a new frame
 POST /api/extract	Perform ROI extraction and scoring
 GET /download/...	Download normalized ROI CSV
-2.3 Web UI (HTML/CSS/JS)
+
+### 2.3 Web UI (HTML/CSS/JS)
 
 The browser interface (index.html + style.css + app.js):
 
