@@ -83,17 +83,17 @@ GET /download/...	Download normalized ROI CSV
 
 The browser interface (index.html + style.css + app.js):
 
-Displays the sensor frame with color-coded ROI boxes
+- Displays the sensor frame with color-coded ROI boxes
 
-Allows pixel-level adjustment of each ROI
+- Allows pixel-level adjustment of each ROI
 
-Provides RUN and Extract & Analyze buttons
+- Provides RUN and Extract & Analyze buttons
 
-Shows Internal control status and viral Positive/Negative calls
+- Shows Internal control status and viral Positive/Negative calls
 
-Lets the user download normalized ROI data as a CSV
+- Lets the user download normalized ROI data as a CSV
 
-Runs entirely in the browser—no installation required.
+- Runs entirely in the browser—no installation required.
 
 2.4 Firebase (Optional)
 
@@ -107,23 +107,23 @@ export FIREBASE_KEY=/path/to/your/firebase_key.json
 ```
 ## 3. How to Run (From a Clean Machine)
 
-3.1 Install Python dependencies
+### 3.1 Install Python dependencies
 ```
 cd backend
 pip install -r requirements.txt
 ```
 
-3.2 Connect the MCU
+### 3.2 Connect the MCU
 
-Upload the example firmware or your own firmware that outputs a 160×160 frame
+- Upload the example firmware or your own firmware that outputs a 160×160 frame
 
-Edit PORT_NAME in server.py to match your system
+- Edit PORT_NAME in server.py to match your system
 
-Windows example: "COM7"
+   - Windows example: "COM7"
 
-Linux/Mac example: "/dev/ttyACM0"
+   - Linux/Mac example: "/dev/ttyACM0"
 
-3.3 Run the Flask backend
+### 3.3 Run the Flask backend
 ```
 python server.py
 ```
@@ -150,13 +150,13 @@ Download CSV — saves normalized ROI data
 
 ## 4. Reproducibility Notes
 
-ROI normalization and scoring follow the exact method used in the primary experiments
+- ROI normalization and scoring follow the exact method used in the primary experiments
 
-No filtering or temporal smoothing is applied
+- No filtering or temporal smoothing is applied
 
-CSV files contain the exact normalized ROI values used in scoring
+- CSV files contain the exact normalized ROI values used in scoring
 
-Example CSV files (positive/negative) are included in sample_data/
+- Example CSV files (positive/negative) are included in sample_data/
 
 ## 5. Citation
 
