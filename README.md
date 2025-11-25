@@ -42,7 +42,7 @@ MulticapDx/
 
 ## 2. Components and Roles (Beginner-Friendly)
 
-2.1 MCU + Sensor Board
+# 2.1 MCU + Sensor Board
 
 Reads capacitance-based bubble height signals from the Multicap Dx sensor
 
