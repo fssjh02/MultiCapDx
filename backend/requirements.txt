@@ -1,1 +1,6 @@
+flask
+numpy
+pillow
+pyserial
+firebase-admin
 
