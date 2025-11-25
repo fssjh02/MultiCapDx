@@ -37,8 +37,8 @@ MulticapDx/
 │   └── system_diagram.png
 │
 └── README.md
-
 ```
+
 
 ## 2. Components and Roles (Beginner-Friendly)
 
@@ -162,7 +162,7 @@ Download CSV — saves normalized ROI data
 
 If this code is used in a scientific publication, please cite:
 
-Multicap Dx Web UI & Backend
+MultiCapDx Web UI & Backend
 Source code available at: https://github.com/fssjh02/MultiCapDx
 
 
