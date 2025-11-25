@@ -38,9 +38,7 @@ MulticapDx/
 │
 └── README.md
 
----
-'''
-***
+```
 
 2. Components and Roles (Beginner-Friendly)
 2.1 MCU + Sensor Board
@@ -160,3 +158,5 @@ If this code is used in a scientific publication, please cite:
 
 Multicap Dx Web UI & Backend
 Source code available at: https://github.com/fssjh02/MultiCapDx
+
+
