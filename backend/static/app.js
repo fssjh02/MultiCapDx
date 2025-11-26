@@ -1,4 +1,6 @@
-// Constants (백엔드와 맞춰야 함)
+// ======================================================
+// Constants
+// ======================================================
 const W = 160;
 const H = 160;
 const ROI_SIZE = 50;
@@ -6,6 +8,9 @@ const SCALE = 3;
 
 let rois = (window.DEFAULT_ROIS || []).map(r => ({ ...r }));
 
+// ------------------------------------------------------
+// Helpers
+// ------------------------------------------------------
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
@@ -18,6 +23,8 @@ function centroidToTL(cx, cy) {
 function showPlaceholder(show) {
   const img = document.getElementById("img");
   const placeholder = document.getElementById("placeholder");
+  if (!img || !placeholder) return;
+
   if (show) {
     placeholder.style.display = "block";
     img.style.display = "none";
@@ -27,8 +34,13 @@ function showPlaceholder(show) {
   }
 }
 
+// ------------------------------------------------------
+// Draw ROI Overlay
+// ------------------------------------------------------
 function drawOverlay() {
   const svg = document.getElementById("overlay");
+  if (!svg) return;
+
   const w = W * SCALE;
   const h = H * SCALE;
 
@@ -65,8 +77,18 @@ function drawOverlay() {
   });
 }
 
+// 다른 스크립트에서 호출할 수 있도록(예전에 index.html에서 쓰던 것 대비용)
+window.resetOverlay = function () {
+  drawOverlay();
+};
+
+// ------------------------------------------------------
+// ROI Controls
+// ------------------------------------------------------
 function buildROIControls() {
   const grid = document.getElementById("roiGrid");
+  if (!grid) return;
+
   grid.innerHTML = "";
 
   const names = ["Internal", "HIV", "HBV", "HCV"];
@@ -133,11 +155,14 @@ function buildROIControls() {
   });
 }
 
+// ------------------------------------------------------
+// RUN (Capture from device)
+// ------------------------------------------------------
 async function runCapture() {
   showPlaceholder(true);
   const img = document.getElementById("img");
   const overlay = document.getElementById("overlay");
-  overlay.innerHTML = "";
+  if (overlay) overlay.innerHTML = "";
 
   try {
     const res = await fetch("/api/capture", { method: "POST" });
@@ -146,6 +171,7 @@ async function runCapture() {
       alert("Capture error: " + (data.error || "unknown"));
       return;
     }
+
     img.src = "data:image/png;base64," + data.image_b64;
     img.onload = () => {
       showPlaceholder(false);
@@ -156,6 +182,52 @@ async function runCapture() {
   }
 }
 
+// ------------------------------------------------------
+// 🔥 OPEN CSV (load frame from local CSV file)
+// ------------------------------------------------------
+async function openCSV(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  showPlaceholder(true);
+  const overlay = document.getElementById("overlay");
+  if (overlay) overlay.innerHTML = "";
+
+  try {
+    const res = await fetch("/api/open_csv", {
+      method: "POST",
+      body: formData
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      alert("CSV load error: " + data.error);
+      return;
+    }
+
+    const img = document.getElementById("img");
+    img.src = "data:image/png;base64," + data.image_b64;
+    img.onload = () => {
+      showPlaceholder(false);
+      drawOverlay();
+    };
+
+    // 새 프레임 로딩 시 결과창 초기화 (선택 사항)
+    const downloadArea = document.getElementById("downloadArea");
+    const results = document.getElementById("results");
+    if (downloadArea) downloadArea.innerHTML = "";
+    if (results) results.innerHTML = `<div class="result-row">No analysis yet</div>`;
+
+    console.log("CSV frame loaded successfully.");
+
+  } catch (e) {
+    alert("CSV upload failed: " + e.message);
+  }
+}
+
+// ------------------------------------------------------
+// Extract & Analyze
+// ------------------------------------------------------
 async function runExtract() {
   try {
     const res = await fetch("/api/extract", {
@@ -164,18 +236,24 @@ async function runExtract() {
       body: JSON.stringify({ rois })
     });
     const data = await res.json();
+
     if (!data.ok) {
       alert("Extract error: " + (data.error || "unknown"));
       return;
     }
 
     const downloadArea = document.getElementById("downloadArea");
-    downloadArea.innerHTML = `<a href="/download/${data.csv}" target="_blank">Download CSV (normalized ROI values)</a>`;
+    if (downloadArea) {
+      downloadArea.innerHTML = `<a href="/download/${data.csv}" target="_blank">Download CSV (normalized ROI values)</a>`;
+    }
 
     const results = document.getElementById("results");
-    const hivClass = data.hiv.status === "Positive" ? "pos" : "neg";
-    const hbvClass = data.hbv.status === "Positive" ? "pos" : "neg";
-    const hcvClass = data.hcv.status === "Positive" ? "pos" : "neg";
+    if (!results) return;
+
+    // 🔥 색상 매핑을 뒤집은 부분 (Positive = 빨강, Negative = 초록)
+    const hivClass = data.hiv.status === "Positive" ? "neg" : "pos";
+    const hbvClass = data.hbv.status === "Positive" ? "neg" : "pos";
+    const hcvClass = data.hcv.status === "Positive" ? "neg" : "pos";
 
     results.innerHTML = `
       <div class="result-row"><b>Internal Control:</b>
@@ -202,18 +280,40 @@ async function runExtract() {
   }
 }
 
+// ------------------------------------------------------
+// Init
+// ------------------------------------------------------
 function init() {
   buildROIControls();
   drawOverlay();
   showPlaceholder(true);
 
-  document.getElementById("btnRun").addEventListener("click", runCapture);
-  document.getElementById("btnExtract").addEventListener("click", runExtract);
-  document.getElementById("btnResetROI").addEventListener("click", () => {
-    rois = (window.DEFAULT_ROIS || []).map(r => ({ ...r }));
-    buildROIControls();
-    drawOverlay();
-  });
+  const btnRun = document.getElementById("btnRun");
+  const btnExtract = document.getElementById("btnExtract");
+  const btnResetROI = document.getElementById("btnResetROI");
+
+  if (btnRun) btnRun.addEventListener("click", runCapture);
+  if (btnExtract) btnExtract.addEventListener("click", runExtract);
+  if (btnResetROI) {
+    btnResetROI.addEventListener("click", () => {
+      rois = (window.DEFAULT_ROIS || []).map(r => ({ ...r }));
+      buildROIControls();
+      drawOverlay();
+    });
+  }
+
+  // 🔥 CSV OPEN events
+  const csvInput = document.getElementById("csvInput");
+  const btnOpenCSV = document.getElementById("btnOpenCSV");
+
+  if (csvInput && btnOpenCSV) {
+    btnOpenCSV.addEventListener("click", () => csvInput.click());
+    csvInput.addEventListener("change", () => {
+      if (csvInput.files.length > 0) {
+        openCSV(csvInput.files[0]);
+      }
+    });
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
