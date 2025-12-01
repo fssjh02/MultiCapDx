@@ -21,7 +21,7 @@ MulticapDx/
 │   ├── static/            # CSS, JS, logo
 │   │   ├── style.css
 │   │   ├── app.js
-│   │   └── lab_logo.png   # (optional)
+│   │   └── lab_logo.png   
 │   └── templates/
 │       └── index.html     # Web UI template (Flask)
 │
