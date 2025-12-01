@@ -10,32 +10,31 @@ from PIL import Image, ImageDraw
 from flask import Flask, request, render_template, jsonify, send_file
 
 
-# =========================================================
-# OPTIONAL: Firebase Initialization (safe for public repos)
-# =========================================================
+# =========================
+# Firebase 초기화
+# =========================
 db = None
 try:
-    key_path = os.getenv("FIREBASE_KEY")  # must be set manually by the user
+    key_path = os.getenv("FIREBASE_KEY")
+    if not key_path:
+        key_path = r"c:/Users/User/Desktop/bubble/Bubble 2/file/UI code/multicapdx-firebase-admin.json"
 
-    if key_path:
-        import firebase_admin
-        from firebase_admin import credentials, firestore
+    import firebase_admin
+    from firebase_admin import credentials, firestore
 
-        cred = credentials.Certificate(key_path)
-        firebase_admin.initialize_app(cred)
-        db = firestore.client()
-        print("Firebase initialized.")
-    else:
-        print("Firebase disabled (no FIREBASE_KEY environment variable).")
+    cred = credentials.Certificate(key_path)
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    print("✅ Firebase initialized:", key_path)
 
-except Exception:
-    print("Firebase initialization skipped.")
+except Exception as e:
+    print("⚠️ Firebase init failed:", e)
     db = None
 
 
-# =========================================================
-# Device Config
-# =========================================================
+# -------------------
+# Config
+# -------------------
 PORT_NAME    = "COM7"
 BAUDRATE     = 115200
 READ_TIMEOUT = 3.0
@@ -45,14 +44,14 @@ W, H = 160, 160
 ROI_SIZE = 50
 N = W * H
 
-# Viral cutoffs
+# Cutoffs
 CUTOFF_HIV = 97.5
 CUTOFF_HBV = 195.5
 CUTOFF_HCV = 134.7
 
-# Default ROI centers
+# Default ROIs
 DEFAULT_ROIS = [
-    {"cx": 35,  "cy": 125},  # Internal Control
+    {"cx": 35,  "cy": 125},  # Internal
     {"cx": 125, "cy": 125},  # HIV
     {"cx": 35,  "cy": 35},   # HBV
     {"cx": 125, "cy": 35},   # HCV
@@ -60,36 +59,37 @@ DEFAULT_ROIS = [
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
-# Last captured or loaded frame
+# 최근 프레임 (디바이스 캡쳐 or CSV 로드)
 last_frame = None
 
 
 # ======================================================
-# Utility — numpy array → PNG base64
+# Utility — RAW → PNG base64
 # ======================================================
 def numpy_to_png_base64(arr, scale=3):
     img = Image.fromarray(arr, mode="L")
-    img = img.resize((arr.shape[1] * scale, arr.shape[0] * scale), Image.NEAREST)
+    img = img.resize((arr.shape[1]*scale, arr.shape[0]*scale), Image.NEAREST)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode()
 
 
 # ======================================================
-# Utility — ROI overlay image (base64)
+# Utility — ROI Overlay 이미지 생성 (PNG base64)
 # ======================================================
 def generate_overlay_image(arr, rois, scale=3):
+    """ROI가 그려진 overlay PNG(base64)를 생성"""
     img = Image.fromarray(arr, mode="L")
-    img = img.resize((arr.shape[1] * scale, arr.shape[0] * scale), Image.NEAREST)
+    img = img.resize((arr.shape[1]*scale, arr.shape[0]*scale), Image.NEAREST)
     img = img.convert("RGB")
 
     draw = ImageDraw.Draw(img)
 
     colors = [
-        (0, 163, 255),   # Internal
-        (255, 107, 107), # HIV
-        (255, 217, 61),  # HBV
-        (124, 255, 145)  # HCV
+        (0, 163, 255),   # Internal (blue)
+        (255, 107, 107), # HIV (red)
+        (255, 217, 61),  # HBV (yellow)
+        (124, 255, 145)  # HCV (green)
     ]
     names = ["Internal", "HIV", "HBV", "HCV"]
 
@@ -102,7 +102,10 @@ def generate_overlay_image(arr, rois, scale=3):
         x2 = (cx + half) * scale
         y2 = (cy + half) * scale
 
+        # ROI rectangle
         draw.rectangle([x1, y1, x2, y2], outline=colors[i], width=3)
+
+        # Label
         draw.text((x1 + 5, y1 + 5), f"{names[i]} ({cx},{cy})", fill=colors[i])
 
     buf = io.BytesIO()
@@ -111,7 +114,7 @@ def generate_overlay_image(arr, rois, scale=3):
 
 
 # ======================================================
-# Read pixels from MCU via Serial
+# MCU pixel read
 # ======================================================
 def read_pixels_from_serial():
     import serial
@@ -150,12 +153,12 @@ def read_pixels_from_serial():
 
 
 # ======================================================
-# ROI Helpers
+# ROI coordinate utils
 # ======================================================
 def clamp_centroid(cx, cy):
     half = ROI_SIZE // 2
-    cx = int(max(half, min(W - half, cx)))
-    cy = int(max(half, min(H - half, cy)))
+    cx = int(max(half, min(W-half, cx)))
+    cy = int(max(half, min(H-half, cy)))
     return cx, cy
 
 
@@ -169,18 +172,21 @@ def centroid_to_xy(cx, cy):
 # ======================================================
 @app.route("/")
 def index():
+    print("🔥 Loading index.html from:", os.path.abspath("templates/index.html"))
     return render_template("index.html", default_rois=DEFAULT_ROIS)
 
 
-# ------------------------- Capture -------------------------
+# ------------------------- Capture (디바이스) -------------------------
 @app.route("/api/capture", methods=["POST"])
 def capture():
     global last_frame
     try:
         frame = read_pixels_from_serial()
-    except Exception:
-        frame = (np.random.rand(H, W) * 255).astype(np.uint8)
+    except Exception as e:
+        print("[Serial error → random frame]:", e)
+        frame = (np.random.rand(H, W)*255).astype(np.uint8)
 
+    # 디바이스에서 읽은 프레임을 회전 후 last_frame에 저장
     rotated = np.rot90(frame, k=-1)
     last_frame = rotated
 
@@ -190,7 +196,7 @@ def capture():
     })
 
 
-# ------------------------- Load CSV -------------------------
+# ------------------------- Open CSV (로컬 파일에서 프레임 로드) -------------------------
 @app.route("/api/open_csv", methods=["POST"])
 def open_csv():
     global last_frame
@@ -199,31 +205,47 @@ def open_csv():
         return jsonify({"ok": False, "error": "No file uploaded"}), 400
 
     file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"ok": False, "error": "Empty filename"}), 400
 
     try:
-        data = np.loadtxt(file, delimiter=",", dtype=np.uint8).flatten()
+        # strictly read as integers (uint8 compatible)
+        data = np.loadtxt(file, delimiter=",", dtype=np.uint8)
+        flat = data.flatten()
 
-        if data.size != N:
-            return jsonify({"ok": False, "error": f"CSV has {data.size} values, expected {N}"}), 400
+        if flat.size != N:
+            return jsonify({
+                "ok": False,
+                "error": f"CSV has {flat.size} values, expected {N} (160x160)."
+            }), 400
 
-        frame = data.reshape((H, W))
+        # reshape to frame
+        frame = flat.reshape((H, W))
+
+        # rotate same as device capture
         rotated = np.rot90(frame, k=-1)
         last_frame = rotated
 
-        return jsonify({"ok": True, "image_b64": numpy_to_png_base64(rotated)})
+        return jsonify({
+            "ok": True,
+            "image_b64": numpy_to_png_base64(rotated, scale=3)
+        })
+
     except Exception as e:
+        print("CSV parse error:", e)
         return jsonify({"ok": False, "error": f"CSV parse error: {e}"}), 400
 
 
-# ------------------------- Extract -------------------------
+
+# ------------------------- Extract + Firestore upload -------------------------
 @app.route("/api/extract", methods=["POST"])
 def extract():
     global last_frame
-
     if last_frame is None:
         return jsonify({"ok": False, "error": "Capture or Open CSV first"})
 
-    rois = request.get_json().get("rois", [])
+    payload = request.get_json() or {}
+    rois = payload.get("rois", [])
     if len(rois) != 4:
         return jsonify({"ok": False, "error": "Need 4 ROIs"})
 
@@ -233,22 +255,21 @@ def extract():
         coords.append(centroid_to_xy(cx, cy))
 
     arr = last_frame.copy()
-    vals = [arr[y:y + ROI_SIZE, x:x + ROI_SIZE].reshape(-1) for x, y in coords]
+    vals = [arr[y:y+ROI_SIZE, x:x+ROI_SIZE].reshape(-1) for x, y in coords]
     all_vals = np.concatenate(vals)
 
     vmin, vmax = int(all_vals.min()), int(all_vals.max())
     if vmax > vmin:
-        norm = np.rint((all_vals - vmin) * (255 / (vmax - vmin))).astype(np.uint8)
+        norm = np.rint((all_vals - vmin) * (255/(vmax-vmin))).astype(np.uint8)
     else:
         norm = np.zeros_like(all_vals)
 
-    roi1, roi2, roi3, roi4 = [norm[i * 2500:(i + 1) * 2500] for i in range(4)]
+    roi1, roi2, roi3, roi4 = [norm[i*2500:(i+1)*2500] for i in range(4)]
 
     def score(r):
-        return float((r.astype(np.float64) / 255.0).sum())
+        return float((r.astype(np.float64)/255.0).sum())
 
     ic_ok = not np.all(roi1 == 0)
-
     hiv_score = score(roi2)
     hbv_score = score(roi3)
     hcv_score = score(roi4)
@@ -257,51 +278,58 @@ def extract():
     hbv_status = "Positive" if hbv_score > CUTOFF_HBV else "Negative"
     hcv_status = "Positive" if hcv_score > CUTOFF_HCV else "Negative"
 
-    # --- Save CSV ---
+    # --- CSV 저장 ---
     now = datetime.now()
     dirpath = f"roi_extract/{now:%m-%d-%Y}"
     os.makedirs(dirpath, exist_ok=True)
     csv_path = f"{dirpath}/{now:%H-%M-%S}_ROI.csv"
     np.savetxt(csv_path, norm[None, :], fmt="%d", delimiter=",")
 
-    # --- ROI Overlay ---
-    overlay_b64 = generate_overlay_image(last_frame, rois)
+    # ==============================
+    # 🔥 ROI Overlay PNG 생성
+    # ==============================
+    overlay_b64 = generate_overlay_image(last_frame, rois, scale=3)
 
-    # --- Firebase Upload (only if configured) ---
+    # ==============================
+    # 🔥 Firestore 업로드
+    # ==============================
     if db is not None:
         try:
-            db.collection("results").document("latest").set({
+            doc = {
                 "timestamp": now.isoformat(),
-
-                "image_b64": overlay_b64,
+                "image_b64": overlay_b64,  # ← ROI Overlay 포함됨
                 "ic_ok": bool(ic_ok),
 
                 "hiv_status": hiv_status,
                 "hbv_status": hbv_status,
                 "hcv_status": hcv_status,
 
-                "hiv_score": hiv_score,
-                "hbv_score": hbv_score,
-                "hcv_score": hcv_score,
-            })
-        except Exception:
-            pass
+                "hiv_score": float(hiv_score),
+                "hbv_score": float(hbv_score),
+                "hcv_score": float(hcv_score),
+
+                "cutoff_hiv": float(CUTOFF_HIV),
+                "cutoff_hbv": float(CUTOFF_HBV),
+                "cutoff_hcv": float(CUTOFF_HCV),
+            }
+            db.collection("results").document("latest").set(doc)
+            print("🔥 Firestore updated with ROI overlay image")
+        except Exception as e:
+            print("❌ Firestore upload error:", e)
 
     return jsonify({
         "ok": True,
         "csv": csv_path,
-
         "ic_ok": ic_ok,
         "hiv": {"status": hiv_status, "score": hiv_score},
         "hbv": {"status": hbv_status, "score": hbv_score},
         "hcv": {"status": hcv_status, "score": hcv_score},
-
         "vmin": vmin,
         "vmax": vmax
     })
 
 
-# ------------------------- Download CSV -------------------------
+# ------------------------- Download -------------------------
 @app.route("/download/<path:filename>")
 def download(filename):
     if not filename.startswith("roi_extract"):
@@ -309,9 +337,9 @@ def download(filename):
     return send_file(filename, as_attachment=True)
 
 
-# ======================================================
-# Entry
-# ======================================================
 if __name__ == "__main__":
-    print("Server running at: http://127.0.0.1:5050")
+    print("http://127.0.0.1:5050 running…")
     app.run(host="127.0.0.1", port=5050, debug=False)
+
+
+print("TEMPLATE DIR =", app.template_folder)
