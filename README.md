@@ -40,7 +40,7 @@ MulticapDx/
 ```
 
 
-## 2. Components and Roles (Beginner-Friendly)
+## 2. Components and Roles
 
 ### 2.1 MCU + Sensor Board
 
