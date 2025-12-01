@@ -18,15 +18,21 @@
 
 <div class="container">
   <div class="row">
+
     <!-- Controls card -->
     <div class="card card-controls">
       <div class="header">Controls</div>
       <div class="body">
         <div class="controls">
           <button id="btnRun" class="btn run">RUN</button>
+
+          <!-- 🔥 NEW: CSV 업로드 -->
+          <input type="file" id="csvInput" accept=".csv" style="display:none">
+          <button id="btnOpenCSV" class="btn open">OPEN CSV</button>
         </div>
         <div class="hint">
-          After dispensing the sample into all chambers, press the RUN button to capture a frame from the sensor.
+          After dispensing the sample into all chambers, press RUN to capture a frame from the sensor.<br>
+          Or use OPEN CSV to load a saved sensor CSV file from your PC.
         </div>
       </div>
     </div>
@@ -70,6 +76,7 @@
         </div>
       </div>
     </div>
+
   </div>
 
   <div class="footer">
@@ -86,4 +93,3 @@
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
-
